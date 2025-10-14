@@ -1,0 +1,30 @@
+{
+  "name": "effective-mobile-test-task",
+  "version": "1.0.0",
+  "description": "Effective mobile test task ",
+  "license": "ISC",
+  "author": "Artem Zaitsev",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "lint": "npx eslint src/",
+    "format": "prettier . --write"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.2",
+    "eslint": "^9.37.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
