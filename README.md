@@ -353,15 +353,17 @@ ADMIN_FULL_NAME=System Administrator
 ADMIN_DATE_OF_BIRTH=1990-01-01
 ```
 
-## Future Enhancements
+## Implementation plan
 
-- [ ] Docker containerization
-- [ ] CI/CD pipeline
+- [x] Docker containerization
+- [ ] Jest configuration
 - [ ] Pre-commit hooks
+- [ ] CI/CD pipeline
 - [ ] Unit tests
-- [ ] API documentation with Swagger
-- [ ] Rate limiting
+- [ ] Actual code implementation
 - [ ] Pagination for user list
+- [ ] Rate limiting
+- [ ] API documentation with Swagger
 
 ## Author
 
