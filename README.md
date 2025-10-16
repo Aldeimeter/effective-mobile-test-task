@@ -356,8 +356,8 @@ ADMIN_DATE_OF_BIRTH=1990-01-01
 ## Implementation plan
 
 - [x] Docker containerization
-- [ ] Jest configuration
-- [ ] Pre-commit hooks
+- [x] Jest configuration
+- [x] Pre-commit hooks
 - [ ] CI/CD pipeline
 - [ ] Unit tests
 - [ ] Actual code implementation

@@ -11,7 +11,8 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "lint": "eslint src/ && eslint test/",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "prepare": "husky && husky install"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
@@ -20,7 +21,9 @@
     "@types/node": "^24.7.2",
     "@types/supertest": "^6.0.3",
     "eslint": "^9.37.0",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "lint-staged": "^16.2.4",
     "prettier": "^3.6.2",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.5",
@@ -31,5 +34,11 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --max-warnings 0 ."
+    ]
   }
 }
