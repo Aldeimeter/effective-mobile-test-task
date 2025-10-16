@@ -8,21 +8,12 @@
     "rootDir": "./",
     "strict": true,
     "isolatedModules": true,
-    "lib": [
-      "esnext"
-    ],
-    "types": [
-      "jest"
-    ],
+    "lib": ["esnext"],
+    "types": ["jest"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "src/**/*",
-    "test/**/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules"]
 }

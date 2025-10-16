@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: final
+      target: production
     container_name: user-management-service
     restart: unless-stopped
     ports:
@@ -37,7 +37,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-userdb}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-userdb}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
