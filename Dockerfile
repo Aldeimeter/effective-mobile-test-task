@@ -23,7 +23,7 @@ COPY --chown=node:node test/ test/
 RUN npm run build
 
 # Combine production only node_modules with compiled javascript files.
-FROM node:22-alpine3.21 AS final
+FROM node:22-alpine3.21 AS production
 RUN apk add --no-cache dumb-init=1.2.5-r3
 USER node
 WORKDIR /app
