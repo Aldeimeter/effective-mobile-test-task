@@ -39,6 +39,9 @@
     "*.{ts,tsx}": [
       "prettier --write",
       "eslint --max-warnings 0"
+    ],
+    "*.{json,yml,yaml,mjs,cjs}": [
+      "prettier --write"
     ]
   }
 }
