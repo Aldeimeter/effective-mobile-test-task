@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../../src/app";
+import app from "../../src/app.js";
 
 describe('Test "/" to verify jest and supertest works', () => {
   it("should return 200 status and hello world message", async () => {

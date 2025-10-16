@@ -5,7 +5,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "strict": true,
     "isolatedModules": true,
     "lib": [
@@ -20,7 +20,7 @@
   },
   "include": [
     "src/**/*",
-    "test/**/*.test.ts"
+    "test/**/*"
   ],
   "exclude": [
     "node_modules"
