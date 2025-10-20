@@ -51,7 +51,7 @@ export const authenticate = (
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user || req.user.role !== "admin") {
-      throw new ForbiddenError();
+      throw new ForbiddenError("Access denied. Admin role required");
     }
     next();
   } catch (error) {

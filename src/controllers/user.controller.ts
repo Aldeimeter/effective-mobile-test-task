@@ -31,6 +31,16 @@ export class UserController {
       next(error);
     }
   }
+
+  async getAllUsers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const users = await userService.getAllUsers();
+
+      return sendSuccess(res, 200, users, "Users retrieved successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const userController = new UserController();

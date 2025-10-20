@@ -1,13 +1,25 @@
 import { Router } from "express";
 import { userController } from "../controllers/user.controller.js";
 import { validateParams } from "../middlewares/validation.middleware.js";
-import { authenticate, isSelfOrAdmin } from "../middlewares/auth.middleware.js";
+import {
+  authenticate,
+  isSelfOrAdmin,
+  isAdmin,
+} from "../middlewares/auth.middleware.js";
 import {
   getUserByIdSchema,
   blockUserSchema,
 } from "../validators/user.validator.js";
 
 const router = Router();
+
+// Protected route - admin only can view all users
+router.get(
+  "/",
+  authenticate,
+  isAdmin,
+  userController.getAllUsers.bind(userController),
+);
 
 // Protected route - user can view own profile, admin can view any profile
 router.get(

@@ -48,4 +48,9 @@ export class UserService {
 
     return this.excludePassword(blockedUser);
   }
+
+  async getAllUsers(): Promise<UserResponse[]> {
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => this.excludePassword(user));
+  }
 }
