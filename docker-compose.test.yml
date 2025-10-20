@@ -1,0 +1,57 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    container_name: user-management-test
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=postgresql://testuser:testpass@postgres:5432/testdb
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=test-secret-key-for-integration-tests
+      - JWT_ACCESS_EXPIRATION=15m
+      - JWT_REFRESH_EXPIRATION=7d
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - test-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npm run test:integration
+      "
+
+  postgres:
+    image: postgres:17.6-alpine3.21
+    container_name: user-management-postgres-test
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  redis:
+    image: redis:8.2.2-alpine3.22
+    container_name: user-management-redis-test
+    command: redis-server --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
