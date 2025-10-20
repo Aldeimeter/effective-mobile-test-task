@@ -5,6 +5,7 @@ import type { User } from "../../generated/prisma/index.js";
 const mockPrismaUser = {
   findUnique: jest.fn<() => Promise<User | null>>(),
   create: jest.fn<() => Promise<User>>(),
+  update: jest.fn<() => Promise<User>>(),
 };
 
 const mockRedisServiceInstance = {
@@ -171,6 +172,113 @@ describe("User Routes", () => {
 
       const response = await request(app)
         .get(`/api/users/${userId}`)
+        .set("Authorization", `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.password).toBeUndefined();
+      expect(response.body.data.email).toBe(mockUser.email);
+    });
+  });
+
+  describe("PATCH /api/users/:id/block", () => {
+    const userId = "550e8400-e29b-41d4-a716-446655440000";
+    const adminId = "660e8400-e29b-41d4-a716-446655440001";
+
+    const mockUser: User = {
+      id: userId,
+      fullName: "John Doe",
+      email: "john@example.com",
+      password: "hashed-password",
+      dateOfBirth: new Date("1990-01-15"),
+      role: "user",
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockBlockedUser: User = {
+      ...mockUser,
+      isActive: false,
+      updatedAt: new Date(),
+    };
+
+    it("should block user and return user with isActive set to false", async () => {
+      const tokenService = new TokenService();
+      const { accessToken } = tokenService.generateTokenPair(
+        adminId,
+        "admin" as const,
+      );
+
+      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+      mockPrismaUser.update.mockResolvedValue(mockBlockedUser);
+      mockRedisServiceInstance.deleteAllUserTokens.mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .patch(`/api/users/${userId}/block`)
+        .set("Authorization", `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe("User blocked successfully");
+      expect(response.body.data).toMatchObject({
+        id: mockBlockedUser.id,
+        isActive: false,
+      });
+    });
+
+    it("should return 404 when user not found", async () => {
+      const tokenService = new TokenService();
+      const { accessToken } = tokenService.generateTokenPair(
+        adminId,
+        "admin" as const,
+      );
+
+      mockPrismaUser.findUnique.mockResolvedValue(null);
+
+      const response = await request(app)
+        .patch(`/api/users/${userId}/block`)
+        .set("Authorization", `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.message).toBe("User not found");
+    });
+
+    it("should handle idempotent blocking (already blocked user)", async () => {
+      const tokenService = new TokenService();
+      const { accessToken } = tokenService.generateTokenPair(
+        adminId,
+        "admin" as const,
+      );
+
+      const alreadyBlockedUser: User = { ...mockUser, isActive: false };
+      mockPrismaUser.findUnique.mockResolvedValue(alreadyBlockedUser);
+      mockPrismaUser.update.mockResolvedValue(alreadyBlockedUser);
+      mockRedisServiceInstance.deleteAllUserTokens.mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .patch(`/api/users/${userId}/block`)
+        .set("Authorization", `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.isActive).toBe(false);
+    });
+
+    it("should not expose password field in response", async () => {
+      const tokenService = new TokenService();
+      const { accessToken } = tokenService.generateTokenPair(
+        adminId,
+        "admin" as const,
+      );
+
+      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+      mockPrismaUser.update.mockResolvedValue(mockBlockedUser);
+      mockRedisServiceInstance.deleteAllUserTokens.mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .patch(`/api/users/${userId}/block`)
         .set("Authorization", `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
