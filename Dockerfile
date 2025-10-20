@@ -11,8 +11,8 @@ USER node
 WORKDIR /app
 COPY --chown=node:node package*.json .
 COPY --chown=node:node prisma/ prisma/
-RUN npm ci --omit=dev --ignore-scripts
-RUN npx prisma generate
+RUN npm ci --omit=dev --ignore-scripts && \
+    npx prisma generate
 
 # Compile typescript sources
 FROM base AS build
@@ -23,8 +23,8 @@ COPY --chown=node:node tsconfig.json tsconfig.json
 COPY --chown=node:node prisma/ prisma/
 COPY --chown=node:node src/ src/
 COPY --chown=node:node test/ test/
-RUN npx prisma generate
-RUN npm run build
+RUN npx prisma generate && \
+    npm run build
 
 # Combine production only node_modules with compiled javascript files.
 FROM node:22-alpine3.21 AS production
