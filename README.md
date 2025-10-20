@@ -19,6 +19,7 @@ A RESTful API service for user management built with Express.js and TypeScript, 
 - [Security & Implementation Details](#security--implementation-details)
 - [Access Control Rules](#access-control-rules)
 - [Environment Variables](#environment-variables)
+- [Getting Started](#getting-started)
 - [Future Enhancements](#future-enhancements)
 - [Author](#author)
 
@@ -353,16 +354,126 @@ ADMIN_FULL_NAME=System Administrator
 ADMIN_DATE_OF_BIRTH=1990-01-01
 ```
 
+## Getting Started
+
+### Prerequisites
+
+- Docker and Docker Compose
+- Node.js 22+ (for local development)
+- PostgreSQL 17+ (for local development)
+- Redis 8+ (for local development)
+
+### Setup
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd effective-mobile-test-task
+```
+
+2. Create environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Update the `.env` file with your configuration (especially `JWT_SECRET` for production)
+
+### Running with Docker Compose (Recommended)
+
+This method starts the application along with PostgreSQL and Redis containers:
+
+```bash
+# Start all services (app, postgres, redis)
+docker-compose up --build
+
+# Run in detached mode
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (clean slate)
+docker-compose down -v
+```
+
+The application will be available at `http://localhost:3000`
+
+### Running with Docker (Standalone)
+
+#### Production Build
+
+```bash
+# Build the production image
+docker build -t user-management-service:prod --target production .
+
+# Run with environment file
+docker run --env-file .env -p 3000:3000 user-management-service:prod
+
+# Or pass environment variables individually
+docker run \
+  -e NODE_ENV=production \
+  -e PORT=3000 \
+  -e DATABASE_URL=postgresql://user:password@host:5432/dbname \
+  -e REDIS_URL=redis://host:6379 \
+  -e JWT_SECRET=your-secret \
+  -e JWT_ACCESS_EXPIRATION=15m \
+  -e JWT_REFRESH_EXPIRATION=7d \
+  -p 3000:3000 \
+  user-management-service:prod
+```
+
+**Note**: Standalone Docker requires external PostgreSQL and Redis instances. Use `docker-compose` for a complete setup.
+
+#### Test Build
+
+```bash
+# Build the test image
+docker build -t user-management-service:test --target test .
+
+# Run tests
+docker run user-management-service:test
+```
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Generate Prisma client
+npx prisma generate
+
+# Run database migrations
+npx prisma migrate dev
+
+# Start development server with hot-reload
+npm run dev
+
+# Run tests
+npm test
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+```
+
 ## Implementation plan
 
 - [x] Docker containerization
 - [x] Jest configuration
 - [x] Pre-commit hooks
-- [ ] CI/CD pipeline
-- [ ] Unit tests
+- [x] CI/CD pipeline
 - [ ] Actual code implementation
-- [ ] Pagination for user list
-- [ ] Rate limiting
+  - [ ] Unit tests (TDD)
+  - [ ] Pagination for user list
+  - [ ] Rate limiting
 - [ ] API documentation with Swagger
 
 ## Author

@@ -82,6 +82,58 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify production image
+      - name: Create test environment file
         run: |
-          echo "✓ Production Docker image built successfully"
+          cat > .env << EOF
+          NODE_ENV=production
+          PORT=3000
+          DATABASE_URL=postgresql://user:password@postgres:5432/userdb
+          REDIS_URL=redis://redis:6379
+          JWT_SECRET=test-secret-key-for-ci-testing
+          JWT_ACCESS_EXPIRATION=15m
+          JWT_REFRESH_EXPIRATION=7d
+          POSTGRES_USER=user
+          POSTGRES_PASSWORD=password
+          POSTGRES_DB=userdb
+          POSTGRES_PORT=5432
+          REDIS_PORT=6379
+          EOF
+
+      - name: Start services with docker compose
+        run: docker compose up -d
+
+      - name: Wait for database to be ready
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          timeout 30 bash -c 'until docker compose exec -T postgres pg_isready -U user -d userdb; do sleep 1; done'
+          echo "✓ Database is ready"
+
+      - name: Run database migrations
+        run: |
+          docker compose exec -T app npx prisma migrate deploy
+          echo "✓ Database migrations applied"
+
+      - name: Wait for application to be healthy
+        run: |
+          echo "Waiting for application to start..."
+          timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+          echo "✓ Application is healthy"
+
+      - name: Test health endpoint
+        run: |
+          response=$(curl -s http://localhost:3000/health)
+          echo "Health endpoint response: $response"
+          if echo "$response" | grep -q '"status":"ok"'; then
+            echo "✓ Health check passed"
+          else
+            echo "✗ Health check failed"
+            exit 1
+          fi
+
+      - name: Show application logs
+        if: always()
+        run: docker compose logs app
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
