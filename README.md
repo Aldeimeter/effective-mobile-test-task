@@ -358,11 +358,11 @@ ADMIN_DATE_OF_BIRTH=1990-01-01
 - [x] Docker containerization
 - [x] Jest configuration
 - [x] Pre-commit hooks
-- [ ] CI/CD pipeline
-- [ ] Unit tests
+- [x] CI/CD pipeline
 - [ ] Actual code implementation
-- [ ] Pagination for user list
-- [ ] Rate limiting
+  - [ ] Unit tests (TDD)
+  - [ ] Pagination for user list
+  - [ ] Rate limiting
 - [ ] API documentation with Swagger
 
 ## Author
