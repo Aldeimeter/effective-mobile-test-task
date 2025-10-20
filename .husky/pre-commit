@@ -3,4 +3,4 @@ set -e
 
 npx tsc --noEmit
 npx lint-staged
-npm test
+npm run test:unit

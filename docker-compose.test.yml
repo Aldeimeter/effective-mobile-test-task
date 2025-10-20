@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: build
+      target: integration-test
     container_name: user-management-test
     environment:
       - NODE_ENV=test
