@@ -46,4 +46,18 @@ WORKDIR /app
 COPY --chown=node:node jest.config.cjs jest.config.cjs
 COPY --chown=node:node .env.test .env
 COPY --chown=node:node swagger.yaml swagger.yaml
-CMD ["npm", "test"]
+CMD ["npm", "run", "test:unit"]
+
+# Integration tests stage - runs from source without building
+FROM base AS integration-test
+USER node
+WORKDIR /app
+RUN npm ci
+COPY --chown=node:node tsconfig.json tsconfig.json
+COPY --chown=node:node jest.config.cjs jest.config.cjs
+COPY --chown=node:node prisma/ prisma/
+COPY --chown=node:node src/ src/
+COPY --chown=node:node test/ test/
+COPY --chown=node:node swagger.yaml swagger.yaml
+RUN npx prisma generate
+CMD ["npm", "run", "test:integration"]
