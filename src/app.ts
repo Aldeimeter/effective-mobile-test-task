@@ -4,6 +4,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
+import { swaggerUi, swaggerDocument } from "./config/swagger.js";
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/health", (req, res) => {
   return res.json({ status: "ok", message: "Server is running" });
 });
+
+// Swagger API Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // API routes
 app.use("/api/auth", authRoutes);

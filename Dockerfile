@@ -36,7 +36,9 @@ COPY --chown=node:node --from=build /app/generated ./generated
 COPY --chown=node:node --from=build /app/dist/src ./dist
 COPY --chown=node:node --from=build /app/package.json ./
 COPY --chown=node:node prisma/ prisma/
-CMD [ "dumb-init", "node", "/app/dist/server.js" ]
+COPY --chown=node:node swagger.yaml swagger.yaml
+COPY --chown=node:node docker-entrypoint.sh docker-entrypoint.sh
+CMD [ "sh", "/app/docker-entrypoint.sh" ]
 
 FROM build AS test
 USER node
