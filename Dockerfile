@@ -45,4 +45,5 @@ USER node
 WORKDIR /app
 COPY --chown=node:node jest.config.cjs jest.config.cjs
 COPY --chown=node:node .env.test .env
+COPY --chown=node:node swagger.yaml swagger.yaml
 CMD ["npm", "test"]
