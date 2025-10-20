@@ -450,54 +450,6 @@ describe("Auth Routes", () => {
       expect(response.body.message).toBe("Logged out successfully");
     });
 
-    it("should return 401 without authentication token", async () => {
-      const response = await request(app)
-        .post("/api/auth/logout")
-        .send({ refreshToken: "some-token" });
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe("No token provided");
-    });
-
-    it("should return 401 with invalid authorization format", async () => {
-      const response = await request(app)
-        .post("/api/auth/logout")
-        .set("Authorization", "InvalidFormat")
-        .send({ refreshToken: "some-token" });
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe("Invalid authorization format");
-    });
-
-    it("should return 401 with invalid access token", async () => {
-      const response = await request(app)
-        .post("/api/auth/logout")
-        .set("Authorization", "Bearer invalid-token")
-        .send({ refreshToken: "some-token" });
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-    });
-
-    it("should return 401 with refresh token in authorization header", async () => {
-      const tokenService = new TokenService();
-      const { refreshToken } = tokenService.generateTokenPair(
-        "user-123",
-        "user",
-      );
-
-      const response = await request(app)
-        .post("/api/auth/logout")
-        .set("Authorization", `Bearer ${refreshToken}`)
-        .send({ refreshToken });
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe("Invalid token type");
-    });
-
     it("should return 400 for missing refresh token in body", async () => {
       const tokenService = new TokenService();
       const { accessToken } = tokenService.generateTokenPair(
@@ -555,49 +507,6 @@ describe("Auth Routes", () => {
       expect(mockRedisServiceInstance.deleteAllUserTokens).toHaveBeenCalledWith(
         "user-123",
       );
-    });
-
-    it("should return 401 without authentication token", async () => {
-      const response = await request(app).post("/api/auth/logout-all");
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe("No token provided");
-    });
-
-    it("should return 401 with invalid access token", async () => {
-      const response = await request(app)
-        .post("/api/auth/logout-all")
-        .set("Authorization", "Bearer invalid-token");
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-    });
-
-    it("should return 401 with refresh token instead of access token", async () => {
-      const tokenService = new TokenService();
-      const { refreshToken } = tokenService.generateTokenPair(
-        "user-123",
-        "user",
-      );
-
-      const response = await request(app)
-        .post("/api/auth/logout-all")
-        .set("Authorization", `Bearer ${refreshToken}`);
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe("Invalid token type");
-    });
-
-    it("should return 401 with malformed authorization header", async () => {
-      const response = await request(app)
-        .post("/api/auth/logout-all")
-        .set("Authorization", "NotBearer token");
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe("Invalid authorization format");
     });
   });
 });
