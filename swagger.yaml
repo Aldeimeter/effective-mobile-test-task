@@ -1,0 +1,892 @@
+openapi: 3.0.3
+info:
+  title: Effective Mobile Test Task API
+  description: |
+    RESTful API for user authentication and management system.
+
+    ## Authentication
+    This API uses JWT (JSON Web Tokens) for authentication. Include the access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+
+    ## Features
+    - User registration and authentication
+    - JWT-based token management (access & refresh tokens)
+    - Role-based access control (User/Admin)
+    - User profile management
+    - Redis-based token blacklisting
+    - User blocking functionality
+  version: 1.0.0
+  contact:
+    name: Artem Zaitsev
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:{port}/api
+    description: Local development server
+    variables:
+      port:
+        default: "3000"
+        description: Server port
+  - url: https://api.example.com/api
+    description: Production server (example)
+
+tags:
+  - name: Authentication
+    description: User authentication and token management endpoints
+  - name: Users
+    description: User management endpoints (profile viewing, blocking)
+  - name: Health
+    description: Service health check endpoints
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the server is running and healthy
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: Server is running
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: |
+        Create a new user account with full name, email, password, and date of birth.
+
+        **Password requirements:**
+        - Minimum 8 characters
+        - At least one letter
+        - At least one number
+        - At least one special character
+
+        **Date formats supported:**
+        - ISO format: YYYY-MM-DD
+        - US format: MM/DD/YYYY
+        - EU format: DD.MM.YYYY
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            examples:
+              isoFormat:
+                summary: Valid registration (ISO format)
+                value:
+                  fullName: John Doe
+                  email: john.doe@example.com
+                  password: SecurePass123!
+                  dateOfBirth: "1990-01-15"
+              usFormat:
+                summary: Valid registration (US format)
+                value:
+                  fullName: Jane Smith
+                  email: jane.smith@example.com
+                  password: SecurePass456!
+                  dateOfBirth: "01/15/1990"
+              euFormat:
+                summary: Valid registration (EU format)
+                value:
+                  fullName: Bob Johnson
+                  email: bob.johnson@example.com
+                  password: SecurePass789!
+                  dateOfBirth: "15.01.1990"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+              examples:
+                success:
+                  summary: Successful registration
+                  value:
+                    success: true
+                    message: User registered successfully
+                    data:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      fullName: John Doe
+                      email: john.doe@example.com
+                      dateOfBirth: 1990-01-15T00:00:00.000Z
+                      role: user
+                      isActive: true
+                      createdAt: 2025-10-20T10:30:00.000Z
+                      updatedAt: 2025-10-20T10:30:00.000Z
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                userExists:
+                  summary: Email already registered
+                  value:
+                    success: false
+                    error:
+                      message: User with this email already exists
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/login:
+    post:
+      summary: Login user
+      description: Authenticate user with email and password. Returns access token and refresh token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              validLogin:
+                summary: Valid login credentials
+                value:
+                  email: john.doe@example.com
+                  password: SecurePass123!
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthTokens"
+              examples:
+                success:
+                  summary: Successful login
+                  value:
+                    success: true
+                    message: Login successful
+                    data:
+                      user:
+                        id: 550e8400-e29b-41d4-a716-446655440000
+                        fullName: John Doe
+                        email: john.doe@example.com
+                        dateOfBirth: 1990-01-15T00:00:00.000Z
+                        role: user
+                        isActive: true
+                        createdAt: 2025-10-20T10:30:00.000Z
+                        updatedAt: 2025-10-20T10:30:00.000Z
+                      accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidCredentials:
+                  summary: Wrong password or email
+                  value:
+                    success: false
+                    error:
+                      message: Invalid email or password
+        "403":
+          description: Account is blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                accountBlocked:
+                  summary: User account is blocked
+                  value:
+                    success: false
+                    error:
+                      message: Your account has been blocked
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: |
+        Get a new access token using a valid refresh token.
+        Refresh tokens are long-lived and stored securely.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+            examples:
+              validRefresh:
+                summary: Valid refresh token
+                value:
+                  refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                            description: New JWT access token
+                          refreshToken:
+                            type: string
+                            description: New JWT refresh token
+              examples:
+                success:
+                  summary: Successful token refresh
+                  value:
+                    success: true
+                    message: Tokens refreshed successfully
+                    data:
+                      accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidToken:
+                  summary: Invalid refresh token
+                  value:
+                    success: false
+                    error:
+                      message: Invalid or expired refresh token
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/logout:
+    post:
+      summary: Logout user
+      description: |
+        Logout from the current device by invalidating the provided refresh token.
+        The refresh token will be blacklisted in Redis.
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+            examples:
+              validLogout:
+                summary: Valid logout request
+                value:
+                  refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: "null"
+                        nullable: true
+              examples:
+                success:
+                  summary: Successful logout
+                  value:
+                    success: true
+                    message: Logged out successfully
+                    data: null
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/logout-all:
+    post:
+      summary: Logout from all devices
+      description: |
+        Logout from all devices by invalidating all refresh tokens for the authenticated user.
+        All active sessions will be terminated.
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Logged out from all devices successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: "null"
+                        nullable: true
+              examples:
+                success:
+                  summary: Successful logout from all devices
+                  value:
+                    success: true
+                    message: Logged out from all devices successfully
+                    data: null
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users:
+    get:
+      summary: Get all users
+      description: |
+        Retrieve a list of all users in the system.
+
+        **Authorization:** Admin only
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/User"
+              examples:
+                success:
+                  summary: Successful retrieval
+                  value:
+                    success: true
+                    message: Users retrieved successfully
+                    data:
+                      - id: 550e8400-e29b-41d4-a716-446655440000
+                        fullName: John Doe
+                        email: john.doe@example.com
+                        dateOfBirth: 1990-01-15T00:00:00.000Z
+                        role: user
+                        isActive: true
+                        createdAt: 2025-10-20T10:30:00.000Z
+                        updatedAt: 2025-10-20T10:30:00.000Z
+                      - id: 660e8400-e29b-41d4-a716-446655440001
+                        fullName: Jane Smith
+                        email: jane.smith@example.com
+                        dateOfBirth: 1985-05-20T00:00:00.000Z
+                        role: admin
+                        isActive: true
+                        createdAt: 2025-10-19T09:15:00.000Z
+                        updatedAt: 2025-10-19T09:15:00.000Z
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      description: |
+        Retrieve a specific user's profile by their ID.
+
+        **Authorization:**
+        - Users can view their own profile
+        - Admins can view any user profile
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User UUID
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200":
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+              examples:
+                success:
+                  summary: Successful retrieval
+                  value:
+                    success: true
+                    message: User retrieved successfully
+                    data:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      fullName: John Doe
+                      email: john.doe@example.com
+                      dateOfBirth: 1990-01-15T00:00:00.000Z
+                      role: user
+                      isActive: true
+                      createdAt: 2025-10-20T10:30:00.000Z
+                      updatedAt: 2025-10-20T10:30:00.000Z
+        "400":
+          description: Invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidId:
+                  summary: Invalid UUID format
+                  value:
+                    success: false
+                    error:
+                      message: Invalid user ID format
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  summary: User does not exist
+                  value:
+                    success: false
+                    error:
+                      message: User not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}/block:
+    patch:
+      summary: Block a user
+      description: |
+        Block a user account by setting isActive to false.
+        Blocked users cannot login or access protected endpoints.
+
+        **Authorization:**
+        - Users can block themselves
+        - Admins can block any user
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User UUID to block
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200":
+          description: User blocked successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+              examples:
+                success:
+                  summary: Successful blocking
+                  value:
+                    success: true
+                    message: User blocked successfully
+                    data:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      fullName: John Doe
+                      email: john.doe@example.com
+                      dateOfBirth: 1990-01-15T00:00:00.000Z
+                      role: user
+                      isActive: false
+                      createdAt: 2025-10-20T10:30:00.000Z
+                      updatedAt: 2025-10-20T11:45:00.000Z
+        "400":
+          description: Invalid user ID format or user already blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidId:
+                  summary: Invalid UUID format
+                  value:
+                    success: false
+                    error:
+                      message: Invalid user ID format
+                alreadyBlocked:
+                  summary: User already blocked
+                  value:
+                    success: false
+                    error:
+                      message: User is already blocked
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  summary: User does not exist
+                  value:
+                    success: false
+                    error:
+                      message: User not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT authentication. Include the access token in the Authorization header:
+        ```
+        Authorization: Bearer <access_token>
+        ```
+
+  schemas:
+    User:
+      type: object
+      description: User entity with profile information
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier (UUID v4)
+          example: 550e8400-e29b-41d4-a716-446655440000
+        fullName:
+          type: string
+          description: User's full name
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: User's email address (unique)
+          example: john.doe@example.com
+        dateOfBirth:
+          type: string
+          format: date-time
+          description: User's date of birth in ISO 8601 format
+          example: 1990-01-15T00:00:00.000Z
+        role:
+          type: string
+          enum: [user, admin]
+          description: User's role in the system
+          example: user
+        isActive:
+          type: boolean
+          description: Whether the user account is active (not blocked)
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: 2025-10-20T10:30:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: 2025-10-20T10:30:00.000Z
+      required:
+        - id
+        - fullName
+        - email
+        - dateOfBirth
+        - role
+        - isActive
+        - createdAt
+        - updatedAt
+
+    RegisterRequest:
+      type: object
+      description: User registration request payload
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+          description: User's full name
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: Valid email address
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: |
+            Password must meet the following requirements:
+            - Minimum 8 characters
+            - At least one letter (a-z, A-Z)
+            - At least one number (0-9)
+            - At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
+          example: SecurePass123!
+        dateOfBirth:
+          type: string
+          description: |
+            Date of birth. Accepts multiple formats:
+            - ISO format: YYYY-MM-DD (recommended, e.g., "1990-01-15")
+            - US format: MM/DD/YYYY (e.g., "01/15/1990")
+            - EU format: DD.MM.YYYY (e.g., "15.01.1990")
+
+            **Important:** Date must be a string, not a date object. Use quotes in JSON.
+          example: "1990-01-15"
+      required:
+        - fullName
+        - email
+        - password
+        - dateOfBirth
+
+    LoginRequest:
+      type: object
+      description: User login request payload
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          description: User's password
+          example: SecurePass123!
+      required:
+        - email
+        - password
+
+    RefreshTokenRequest:
+      type: object
+      description: Refresh token request payload
+      properties:
+        refreshToken:
+          type: string
+          description: Valid JWT refresh token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+        - refreshToken
+
+    LogoutRequest:
+      type: object
+      description: Logout request payload
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh token to invalidate
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+        - refreshToken
+
+    AuthTokens:
+      type: object
+      description: Authentication tokens and user information
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        accessToken:
+          type: string
+          description: JWT access token (short-lived, typically 15 minutes)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          description: JWT refresh token (long-lived, typically 7 days)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+        - user
+        - accessToken
+        - refreshToken
+
+    SuccessResponse:
+      type: object
+      description: Standard success response format
+      properties:
+        success:
+          type: boolean
+          description: Indicates successful operation
+          example: true
+        message:
+          type: string
+          description: Human-readable success message
+          example: Operation completed successfully
+        data:
+          description: Response payload (type varies by endpoint)
+      required:
+        - success
+        - message
+
+    ErrorResponse:
+      type: object
+      description: Standard error response format
+      properties:
+        success:
+          type: boolean
+          description: Always false for errors
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              description: Human-readable error message
+              example: An error occurred
+            details:
+              type: array
+              description: Detailed validation errors (for 400 responses)
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    description: Field name that failed validation
+                    example: email
+                  message:
+                    type: string
+                    description: Validation error message
+                    example: Invalid email format
+      required:
+        - success
+        - error
+
+  responses:
+    ValidationError:
+      description: Validation error - invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            validationError:
+              summary: Validation failed
+              value:
+                success: false
+                error:
+                  message: Validation failed
+                  details:
+                    - field: email
+                      message: Invalid email format
+                    - field: password
+                      message: Password must be at least 8 characters
+
+    UnauthorizedError:
+      description: Unauthorized - missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missingToken:
+              summary: No token provided
+              value:
+                success: false
+                error:
+                  message: No token provided
+            invalidToken:
+              summary: Invalid or expired token
+              value:
+                success: false
+                error:
+                  message: Invalid or expired token
+
+    ForbiddenError:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            forbidden:
+              summary: Access denied
+              value:
+                success: false
+                error:
+                  message: Access denied. Insufficient permissions.
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            serverError:
+              summary: Unexpected error
+              value:
+                success: false
+                error:
+                  message: An unexpected error occurred

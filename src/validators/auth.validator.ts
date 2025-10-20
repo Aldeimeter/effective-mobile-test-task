@@ -27,14 +27,15 @@ const dateOfBirthSchema = z.string().transform((val, ctx) => {
 
   // Try ISO format first
   if (formats[0].test(val)) {
-    date = new Date(val);
+    // Parse as UTC to avoid timezone issues
+    date = new Date(`${val}T00:00:00.000Z`);
   }
   // Try US format
   else if (formats[1].test(val)) {
     const match = val.match(formats[1]);
     if (match) {
       const [, month, day, year] = match;
-      date = new Date(`${year}-${month}-${day}`);
+      date = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
     }
   }
   // Try EU format
@@ -42,7 +43,7 @@ const dateOfBirthSchema = z.string().transform((val, ctx) => {
     const match = val.match(formats[2]);
     if (match) {
       const [, day, month, year] = match;
-      date = new Date(`${year}-${month}-${day}`);
+      date = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
     }
   }
 
