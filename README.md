@@ -1,18 +1,15 @@
-**Note**: This project is a test task for Effective Mobile.
-**Note**: This is only project architecture draft. Final implementation may vary.
-
----
-
 # User Management Service
 
-A RESTful API service for user management built with Express.js and TypeScript, following best practices for project organization and architecture.
+**Production-ready RESTful API for user authentication and management with comprehensive testing, CI/CD, and Docker deployment.**
+
+Built with Express.js, TypeScript, PostgreSQL, Redis, and Prisma. Features JWT authentication, role-based access control, full test coverage, Swagger documentation, and automated CI/CD pipeline.
 
 ## Table of Contents
 
-- [Technical Requirements](#technical-requirements)
-- [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
 - [Features](#features)
-- [User Model](#user-model)
+- [Tech Stack](#tech-stack)
+- [Technical Requirements](#technical-requirements)
 - [API Endpoints](#api-endpoints)
 - [Project Structure](#project-structure)
 - [API Response Format](#api-response-format)
@@ -20,8 +17,87 @@ A RESTful API service for user management built with Express.js and TypeScript, 
 - [Access Control Rules](#access-control-rules)
 - [Environment Variables](#environment-variables)
 - [Getting Started](#getting-started)
-- [Future Enhancements](#future-enhancements)
+- [Running Tests](#running-tests)
+- [Swagger API Documentation](#swagger-api-documentation)
+- [Project Status](#project-status)
 - [Author](#author)
+
+## Quick Start
+
+Get up and running in minutes with Docker Compose:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd effective-mobile-test-task
+
+# Copy environment file
+cp .env.example .env
+
+# Start all services (app, PostgreSQL, Redis)
+docker compose up --build
+
+# Access the API
+curl http://localhost:3000/health
+
+# View Swagger documentation
+open http://localhost:3000/api-docs
+```
+
+The application will be available at `http://localhost:3000` with:
+
+- API endpoints at `/api/*`
+- Swagger documentation at `/api-docs`
+- Health check at `/health`
+- Default admin user created (credentials in `.env`)
+
+## Features
+
+### Core Functionality
+
+- **User Registration** - Create new user accounts with email verification
+- **Authentication** - Secure JWT-based login with access and refresh tokens
+- **Token Management** - Automatic token refresh and revocation
+- **User Management** - View, list, and block user accounts
+- **Role-Based Access Control** - Admin and user roles with granular permissions
+- **Account Security** - Password hashing, rate limiting, and user blocking
+
+### Technical Features
+
+- **RESTful API** - Clean, well-documented REST endpoints
+- **Input Validation** - Zod schema validation for all requests
+- **Error Handling** - Comprehensive error handling with detailed messages
+- **Type Safety** - Full TypeScript implementation
+- **OpenAPI Documentation** - Interactive Swagger UI
+- **Database Migrations** - Versioned schema management with Prisma
+- **Session Management** - Redis-based token storage
+- **Security Headers** - Helmet.js for HTTP security
+- **Rate Limiting** - Protection against brute force attacks
+
+### Development & Testing
+
+- **Unit Tests** - Comprehensive unit test coverage
+- **Integration Tests** - End-to-end API testing
+- **Docker Support** - Containerized development and production
+- **CI/CD Pipeline** - Automated testing and deployment
+- **Code Quality** - ESLint, Prettier, and pre-commit hooks
+- **Hot Reload** - Fast development with tsx
+
+## Tech Stack
+
+- **Runtime**: Node.js 22+
+- **Framework**: Express.js 5.1.x
+- **Language**: TypeScript 5.9+
+- **Database**: PostgreSQL 17+
+- **ORM**: Prisma 6.17+
+- **Cache**: Redis 8+ (refresh token storage)
+- **Authentication**: JWT (access + refresh tokens)
+- **Validation**: Zod 4.1+
+- **Security**: bcrypt, helmet, express-rate-limit
+- **Testing**: Jest 30+ with Supertest
+- **DevOps**: Docker, Docker Compose, GitHub Actions
+- **Documentation**: Swagger/OpenAPI 3.0
+- **Tools**: ESLint, Prettier, Husky, lint-staged
 
 ## Technical Requirements
 
@@ -45,49 +121,6 @@ The user entity contains:
 3. **Get User by ID** - Retrieve user details (accessible by admins or the user themselves)
 4. **Get Users List** - Retrieve all users (admin-only access)
 5. **Block User** - Deactivate user accounts (accessible by admins or users can block themselves)
-
-## Tech Stack
-
-- **Runtime**: Node.js
-- **Framework**: Express.js 5.1.x
-- **Language**: TypeScript
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Cache/Session Store**: Redis (refresh tokens)
-- **Authentication**: JWT (access + refresh tokens)
-- **Validation**: Zod
-- **Security**: bcrypt, helmet, express-rate-limit
-- **Development Tools**:
-  - ESLint for code linting
-  - Prettier for code formatting
-  - tsx for development hot-reload
-
-## Features
-
-- User registration with validation (Zod)
-- Secure authentication and authorization (JWT)
-- Role-based access control (RBAC)
-- User profile management
-- User status management (active/blocked)
-- Input validation and error handling
-- RESTful API design
-- TypeScript for type safety
-
-## User Model
-
-```typescript
-interface User {
-  id: string;
-  fullName: string;
-  dateOfBirth: Date;
-  email: string; // unique
-  password: string; // hashed
-  role: "admin" | "user";
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
 
 ## API Endpoints
 
@@ -454,8 +487,14 @@ npx prisma migrate dev
 # Start development server with hot-reload
 npm run dev
 
-# Run tests
+# Run all tests
 npm test
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests (requires running services)
+npm run test:integration
 
 # Lint code
 npm run lint
@@ -464,18 +503,108 @@ npm run lint
 npm run format
 ```
 
-## Implementation plan
+### Running Tests
 
-- [x] Docker containerization
+#### Unit Tests
+
+Unit tests can be run independently without any external services:
+
+```bash
+npm run test:unit
+```
+
+#### Integration Tests
+
+Integration tests require PostgreSQL and Redis to be running. You can run them with Docker Compose:
+
+```bash
+# Run integration tests in Docker environment
+docker compose -f docker-compose.test.yml up --build --exit-code-from app
+
+# Cleanup after tests
+docker compose -f docker-compose.test.yml down -v
+```
+
+Or run them locally if you have PostgreSQL and Redis running:
+
+```bash
+npm run test:integration
+```
+
+## Swagger API Documentation
+
+Once the server is running, you can access the interactive Swagger UI at:
+
+```
+http://localhost:3000/api-docs
+```
+
+The Swagger UI provides:
+
+- Interactive API exploration
+- Request/response examples
+- Schema definitions
+- Authentication testing
+- Try-it-out functionality for all endpoints
+
+## Project Status
+
+### Completed Features
+
+**Core Implementation**
+
+- [x] User registration with validation
+- [x] User authentication (login/logout)
+- [x] JWT token management (access + refresh tokens)
+- [x] Token refresh endpoint
+- [x] Logout from all devices
+- [x] Get user by ID endpoint
+- [x] Get all users endpoint (admin only)
+- [x] Block user endpoint
+- [x] Role-based access control (RBAC)
+- [x] Input validation with Zod
+- [x] Error handling middleware
+- [x] Rate limiting on auth endpoints
+- [x] Password hashing with bcrypt
+- [x] Redis integration for token storage
+- [x] PostgreSQL with Prisma ORM
+- [x] Database migrations
+- [x] Admin user seeding
+
+**Testing**
+
 - [x] Jest configuration
-- [x] Pre-commit hooks
-- [x] CI/CD pipeline
-- [ ] Actual code implementation
-  - [ ] Unit tests (TDD)
-  - [ ] Pagination for user list
-  - [ ] Rate limiting
-- [ ] API documentation with Swagger
+- [x] Unit tests for all routes
+- [x] Unit tests for auth middleware
+- [x] Integration tests for auth flow
+- [x] Integration tests for user management
+- [x] Separate test scripts (unit/integration)
+- [x] Docker-based integration testing
+- [x] Test coverage for critical paths
+
+**DevOps & Infrastructure**
+
+- [x] Docker containerization (multi-stage builds)
+- [x] Docker Compose for local development
+- [x] Docker Compose for integration tests
+- [x] CI/CD pipeline with GitHub Actions
+- [x] Pre-commit hooks (husky + lint-staged)
+- [x] ESLint configuration
+- [x] Prettier code formatting
+- [x] Dockerfile linting with hadolint
+- [x] Automated testing in CI
+- [x] Production build validation
+
+**Documentation**
+
+- [x] Comprehensive README
+- [x] API documentation with Swagger/OpenAPI
+- [x] Environment variables documentation
+- [x] Access control matrix
+- [x] Security implementation details
 
 ## Author
 
-Artem Zaitsev
+**Artem Zaitsev**
+
+This project was created as a test task for Effective Mobile.
