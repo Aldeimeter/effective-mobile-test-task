@@ -14,7 +14,8 @@ export const validate = (schema: ZodSchema) => {
         throw new ValidationError(errorMessages);
       }
 
-      // Validate only - don't modify req.body as it may be read-only in Express v5
+      // Replace req.body with validated and transformed data
+      req.body = result.data;
       next();
     } catch (error) {
       next(error);
@@ -34,7 +35,8 @@ export const validateParams = (schema: ZodSchema) => {
         throw new ValidationError(errorMessages);
       }
 
-      // Validate only - don't modify req.params as it's read-only in Express v5
+      // Replace req.params with validated and transformed data
+      req.params = result.data as typeof req.params;
       next();
     } catch (error) {
       next(error);
