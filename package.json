@@ -8,6 +8,8 @@
   "main": "index.js",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns=test/integration",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest test/integration",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "lint": "eslint src/ && eslint test/",
