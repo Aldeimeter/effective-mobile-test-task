@@ -99,18 +99,18 @@ jobs:
           REDIS_PORT=6379
           EOF
 
-      - name: Start services with docker-compose
-        run: docker-compose up -d
+      - name: Start services with docker compose
+        run: docker compose up -d
 
       - name: Wait for database to be ready
         run: |
           echo "Waiting for PostgreSQL to be ready..."
-          timeout 30 bash -c 'until docker-compose exec -T postgres pg_isready -U user -d userdb; do sleep 1; done'
+          timeout 30 bash -c 'until docker compose exec -T postgres pg_isready -U user -d userdb; do sleep 1; done'
           echo "✓ Database is ready"
 
       - name: Run database migrations
         run: |
-          docker-compose exec -T app npx prisma migrate deploy
+          docker compose exec -T app npx prisma migrate deploy
           echo "✓ Database migrations applied"
 
       - name: Wait for application to be healthy
@@ -132,8 +132,8 @@ jobs:
 
       - name: Show application logs
         if: always()
-        run: docker-compose logs app
+        run: docker compose logs app
 
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
